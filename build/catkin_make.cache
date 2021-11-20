@@ -1,0 +1,2 @@
+
+-DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DCATKIN_DEVEL_PREFIX=/home/yuanhe/Practice/devel -DCMAKE_INSTALL_PREFIX=/home/yuanhe/Practice/install -G Unix Makefiles
