@@ -8,8 +8,8 @@ def jira_authority(user, passwd):
     jira = JIRA(options, basic_auth=(user, passwd))
     return jira
 
-user = 'yuanhe'
-passwd = 'Jack616977'
+# user = 'yuanhe'
+# passwd = ''
 jira = jira_authority(user, passwd)
 
 jql ='''
