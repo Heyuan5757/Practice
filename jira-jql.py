@@ -1,34 +1,102 @@
 from jira import JIRA
 from collections import Counter
 import plotly.graph_objects as go
-import  plotly.offline as  of
+import plotly.express as px
+import  plotly.offline as  py
+import numpy as np
+import xlsxwriter
+import pandas
+
 
 def jira_authority(user, passwd):
     options = {"server": "https://jira.deeproute.ai/"}
     jira = JIRA(options, basic_auth=(user, passwd))
     return jira
 
-# user = 'yuanhe'
-# passwd = ''
+user = 'simulationTest0'
+passwd = '123456Qq.'
 jira = jira_authority(user, passwd)
 
+ob_id = []
+reporter={}
+point={}
+date=['2021-10-18','2021-10-23','2021-10-28','2021-11-2','2021-11-7','2021-11-12','2021-11-17','2021-11-22','2021-11-27']
+
+for num in range(0,len(date)-1):
+    jql ='''
+            project = OB AND createdDate >={date1}    and createdDate <= {date2} ORDER BY priority DESC, updated DESC
+            '''.format(date1=date[num],date2=date[num+1])
+
+    results = jira.search_issues(jql,maxResults=1500)
+    for issue in results:
+        if  issue.fields.reporter.displayName not in reporter.keys():
+            reporter[issue.fields.reporter.displayName]=[]
+            point[issue.fields.reporter.displayName]=[0,0,0,0]
+        reporter[issue.fields.reporter.displayName].append(issue.key)
+        if issue.fields.customfield_11410.value ==  '2':
+            point[issue.fields.reporter.displayName][0] += 1
+        elif issue.fields.customfield_11410.value == '1':
+            point[issue.fields.reporter.displayName][1] += 1
+        elif issue.fields.customfield_11410.value == '0':
+            point[issue.fields.reporter.displayName][2] += 1    
+        elif issue.fields.customfield_11410.value == '-1':
+            point[issue.fields.reporter.displayName][3] += 1
+
 jql ='''
-project = OT AND (status = 规划中 AND (计划开始时间 < startOfDay(-1) OR 计划开始时间 is EMPTY) OR status = 处理中 AND (计划结束时间 < startOfDay(-1) OR 计划结束时间 is EMPTY) OR status = BACKLOG AND createdDate < -2d OR status = done AND status changed from 处理中 to DONE before startofday(-2)  OR status = Pause AND status changed from 处理中 to PAUSE before startOfDay(-15)  OR status = Canceled AND (status changed from 处理中 to Canceled before startofday(-2)  OR status changed from BACKLOG to Canceled before startofday(-2) )) AND level != Fleet-Only AND (component != 持续任务 OR component is EMPTY) AND type != Bug AND (reporter in (membersOf(TestGroup), membersOf(SafetyGroup), membersOf(MaintenanceGroup), membersOf(USsafetyGroup), muxuanwang, ChenTony) OR assignee in (membersOf(TestGroup), membersOf(SafetyGroup), membersOf(MaintenanceGroup), membersOf(USsafetyGroup), muxuanwang, ChenTony)) AND key != OT-1420 ORDER BY created DESC
-'''
+    project = OB AND createdDate >= '2021-11-27'    ORDER BY priority DESC, updated DESC
+    '''    
+results = jira.search_issues(jql,maxResults=1500)
 
-results = jira.search_issues(jql,maxResults=300)
-ot_id = []
-assignees={}
 for issue in results:
-    if  issue.fields.assignee.displayName not in assignees.keys():
-         assignees[issue.fields.assignee.displayName]=[]
-    assignees[issue.fields.assignee.displayName].append(issue.key)
+    if  issue.fields.reporter.displayName not in reporter.keys():
+        reporter[issue.fields.reporter.displayName]=[]
+        point[issue.fields.reporter.displayName]=[0,0,0,0]
+    reporter[issue.fields.reporter.displayName].append(issue.key)
+    if issue.fields.customfield_11410.value ==  '2':
+        point[issue.fields.reporter.displayName][0] += 1
+    elif issue.fields.customfield_11410.value == '1':
+        point[issue.fields.reporter.displayName][1] += 1
+    elif issue.fields.customfield_11410.value == '0':
+        point[issue.fields.reporter.displayName][2] += 1    
+    elif issue.fields.customfield_11410.value == '-1':
+        point[issue.fields.reporter.displayName][3] += 1
+
+workbook = xlsxwriter.Workbook("/home/OB_point.xlsx")
+table = workbook.add_worksheet('sheet')
+x=0 
+for name in point:
+    table.write(x,0,name)
+    for y in range(1,5):
+         table.write(x,y,point[name][y-1])
+    x += 1
     
-print(assignees)
+# workbook.close()
+
+data = { 'name' : [],
+                    '2分' : [],
+                    '1分' : [],
+                    '0分' : [],
+                    '-1分' : [],
+                    '总个数' : []
+    }
+_index = []
+_count = 0 
+for num in point:
+    data['name'].append(num)
+    data['-1分'].append(point[num][3])
+    data['0分'].append(point[num][2])
+    data['2分'].append(point[num][0])
+    data['1分'].append(point[num][1])
+    data['总个数'].append(sum(point[num]))
+    _count += 1
+    _index.append(_count)
+df =pandas.DataFrame(data,index=_index,columns=['name','-1分','0分','1分','2分','总个数'])
 
 
 
-# Use `hole` to create a donut-like pie chart
-# fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-# fig.show()
-# of.plot(fig,filename="plotly_plot.html")
+
+fig =px.bar(df.sort_values(by='总个数',ascending=False),x = "name",y = ['-1分','0分','1分','2分'] ,title="OB积极性统计",hover_data=['总个数'])
+fig.show()
+
+
+

@@ -2,4 +2,4 @@
 source_root_dir = '/home/yuanhe/Practice/src'
 whitelisted_packages = ''.split(';') if '' != '' else []
 blacklisted_packages = ''.split(';') if '' != '' else []
-underlay_workspaces = '/opt/deeproute/planning_sim;/opt/ros/melodic'.split(';') if '/opt/deeproute/planning_sim;/opt/ros/melodic' != '' else []
+underlay_workspaces = '/opt/ros/melodic'.split(';') if '/opt/ros/melodic' != '' else []
