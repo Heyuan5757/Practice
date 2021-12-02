@@ -15,7 +15,12 @@ def deal_with_months(months):
         monthdone='2022-1-1'
     return monthstart,monthdone
 
-
+def deal_with_day(days):
+    today = datetime.datetime.today()
+    lastweek = today - datetime.timedelta(days)
+    today = today.isoformat()
+    lastweek = lastweek.isoformat()
+    return today[0:10],lastweek[0:10]
 
 def search_issues(jql):
     block_num = 0
@@ -36,6 +41,8 @@ if __name__=='__main__':
     passwd = '123456Qq.'
     jira = jira_authority(user, passwd)
     monthstarter,monthdone = deal_with_months(11)
+    today,lastweek = deal_with_day(20)
     jql='project = OB AND created >= '+monthstarter+' AND created <= '+monthdone+' ORDER BY priority DESC, updated DESC'
+    jql='project = OB AND created >= '+lastweek+' AND created <= '+today+' ORDER BY priority DESC, updated DESC'
     all_issues=search_issues(jql)
     print(all_issues)
